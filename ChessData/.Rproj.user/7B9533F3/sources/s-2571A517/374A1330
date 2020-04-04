@@ -1,0 +1,25 @@
+{
+    "collab_server" : "",
+    "contents" : "",
+    "created" : 1585794015611.000,
+    "dirty" : true,
+    "encoding" : "UTF-8",
+    "folds" : "",
+    "hash" : "0",
+    "id" : "374A1330",
+    "lastKnownWriteTime" : 1585799610,
+    "last_content_update" : 1585979383478,
+    "path" : "~/My Stuff/CSIS Projects/Chess Data Analysis/ChessData/R/Chess_Data_Function.R",
+    "project_path" : "R/Chess_Data_Function.R",
+    "properties" : {
+        "cursorPosition" : "5,10",
+        "scrollLine" : "0"
+    },
+    "read_only" : false,
+    "read_only_alternatives" : [
+    ],
+    "relative_order" : 2,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "r_source"
+}

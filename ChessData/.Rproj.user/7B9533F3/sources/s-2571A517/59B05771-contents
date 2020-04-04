@@ -1,0 +1,13 @@
+Package: ChessData
+Type: Package
+Title: Gathers Chess.com Archive Data
+Version: 0.1.0
+Author: Matthew Helke <matthewhelke52@gmail.com>
+Maintainer: Matthew Helke <matthewhelke52@gmail.com>
+Description: This package creates a table of chess data based on the chess.com user 
+    archive API. The function takes 3 strings, chess.com username, year (YYYY format),
+    and a month (MM format). It will then download game data  from the chess.com API
+    and organize it into a table to use for easy analysis
+License: MIT
+Encoding: UTF-8
+LazyData: true

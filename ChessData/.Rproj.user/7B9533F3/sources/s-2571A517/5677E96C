@@ -1,0 +1,25 @@
+{
+    "collab_server" : "",
+    "contents" : "",
+    "created" : 1585799757429.000,
+    "dirty" : false,
+    "encoding" : "UTF-8",
+    "folds" : "",
+    "hash" : "0",
+    "id" : "5677E96C",
+    "lastKnownWriteTime" : 1585980430,
+    "last_content_update" : 1585980430599,
+    "path" : "~/My Stuff/CSIS Projects/Chess Data Analysis/Chess_Data_Function_Narative.R",
+    "project_path" : null,
+    "properties" : {
+        "cursorPosition" : "9,30",
+        "scrollLine" : "0"
+    },
+    "read_only" : false,
+    "read_only_alternatives" : [
+    ],
+    "relative_order" : 4,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "r_source"
+}

@@ -1,0 +1,173 @@
+test <- chess_data("mastermatthew52", 2017, 3, 3)
+
+chess_data <- function(username, year, month, nmonths) {
+
+library(tidyverse)
+library(ggplot2)
+library(jsonlite)
+library(bigchess)
+
+# make a  copy of nmonths for use in loops
+n = nmonths
+
+
+chess_PGN_data <- vector(mode = "list", n+1)
+chess_data <- vector(mode = "list", n+1)
+jsonData <- vector(mode = "list", n+1)
+JSON_url <- vector(mode = "list", n+1)
+
+
+if (!is.null(nmonths) & nmonths != 1){
+
+  i = 1;
+  while (nmonths!=0) {
+
+    if(month == 13) {month = 1; year = year + 1}
+    if(month < 10){
+      JSON_url[i] <- paste0("https://api.chess.com/pub/player/", username, "/games/", year, "/0", month,
+                         sep = "", collapse = NULL)
+      JSON_pgn_url[i] <- paste0("https://api.chess.com/pub/player/", username, "/games/", year, "/0", month,
+                             "/pgn", sep = "", collapse = NULL)
+
+    }else{
+      JSON_url[i] <- paste0("https://api.chess.com/pub/player/", username, "/games/", year, "/", month,
+                         sep = "", collapse = NULL)
+      JSON_pgn_url[i] <- paste0("https://api.chess.com/pub/player/", username, "/games/", year, "/", month,
+                             "/pgn", sep = "", collapse = NULL)
+
+    } # end else months >= 10
+
+    month <- month + 1;
+    nmonths <- nmonths - 1;
+    i <- i + 1;
+}
+
+}else {
+if(month < 10){
+  JSON_url[i] <- paste0("https://api.chess.com/pub/player/", username, "/games/", year, "/0", month,
+                     sep = "", collapse = NULL)
+  JSON_pgn_url[i] <- paste0("https://api.chess.com/pub/player/", username, "/games/", year, "/0", month,
+                         "/pgn", sep = "", collapse = NULL)
+
+}else{
+  JSON_url[i] <- paste0("https://api.chess.com/pub/player/", username, "/games/", year, "/", month,
+                     sep = "", collapse = NULL)
+  JSON_pgn_url[i] <- paste0("https://api.chess.com/pub/player/", username, "/games/", year, "/", month,
+                         "/pgn", sep = "", collapse = NULL)
+
+} # end else months >= 10
+} # end else
+
+# Now the function should be able to grab multiple months out of the newly created vector
+
+# Load JSON data provided via chess.com API
+i <- 1
+while(i <= n) {
+
+  # flatten will make any nested data "flat" or it's own colum
+  jsonData[i] <- fromJSON(toString(JSON_url[i]), flatten = TRUE)
+  chess_PGN_data[[i]] <- read.pgn(toString(JSON_pgn_url[i]), add.tags = c("ECO", "Link"))
+  i <- i + 1
+}
+
+i <- 1
+
+while(i <= n){
+  # Added row name argument (problem explained below)
+  chess_PGN_data_temp <- as.data.frame(chess_PGN_data[[i]], row.names = NULL)
+  chess_data_temp <- as.data.frame(jsonData[[i]], row.names= NULL)
+
+  # The URL needs to be renamed
+  chess_PGN_data_temp  <- chess_PGN_data_temp %>%
+    rename(url = Link)
+
+  # I had to take these off because in some months people may not have played
+  # certain types of games meaning that column would be dropped.
+
+  chess_data_temp <- chess_data_temp %>%
+    mutate(match = NA) %>%
+    mutate(tournament = NA) %>%
+    mutate(start_time = NA)
+
+  if(i==1){
+    chess <- chess_data_temp
+  }else{
+
+
+  chess <- chess %>%
+    rbind(chess_data_temp, make.row.names = FALSE)
+  }
+
+  chess_PGN_data_full <- chess_PGN_data_temp %>%
+    rbind(chess_PGN_data_temp, make.row.names = FALSE)
+
+  i <- i + 1
+
+
+}
+
+# Join the PGN and Chess tables by the unique URL
+chess <- chess %>%
+  inner_join(chess_PGN_data_full, by = "url")
+
+
+
+chess <- as_tibble(chess)
+
+# remove rows that are not needed
+# end_time and start_time do not provide much information and will not be included
+# site is always chess.com because we are using their API
+# pgn was already extracted via BigChess package. This information is redundant.
+
+chess <- chess %>%
+     select(-end_time, -start_time, -Site, -pgn)
+# 4 columns were removed
+
+
+# Create New, Informative Columns
+
+# Column for who won the game
+
+chess <- chess %>%
+  mutate(winner = if_else(Result == "1/2-1/2", "Draw", "")) %>%
+  mutate(winner = if_else(Result == "1-0", White, winner)) %>%
+  mutate(winner = if_else(Result == "0-1", Black, winner))
+
+
+# Column for how the game was won (i.e. checkmate, timeout, resign, draw)
+
+chess <- chess %>%
+  mutate(ending = if_else(Result == "1/2-1/2", "Draw", "")) %>%
+  mutate(ending = if_else(Result == "1-0", chess$black.result, ending)) %>%
+  mutate(ending = if_else(Result == "0-1", chess$white.result, ending))
+
+# All columns that contain repeated data from  the pgn file can be deleted. This
+# includes most of the white and black data.
+
+chess <- chess %>%
+  mutate(white_rating = chess$white.rating) %>%
+  mutate(black_rating = chess$black.rating) %>%
+  select(-`white.@id`, -`black.@id`, -white.result, -black.result, -white.username,
+         -black.username, -white.rating, -black.rating)
+
+# Reorder the columns to make more sense logically
+# (i.e. putting the ratings  by the usernames not at the end.)
+
+chess <- chess %>%
+  select(url, Date, time_control, time_class, White, white_rating,
+         Black, black_rating, ECO, Result, winner, ending, fen, NMoves,
+         W1, B1, W2, B2, W3, B3, W4, B4, W5, B5, W6, B6, W7, B7, W8, B8, W9,
+         B9, W10, B10, last.move, W_B_moves, W_K_moves, W_N_moves, W_O_moves,
+         W_Q_moves, W_R_moves, B_B_moves, B_K_moves, B_N_moves, B_O_moves,
+         B_Q_moves, B_R_moves, B_moves, K_moves, N_moves, O_moves,
+         Q_moves, R_moves)
+
+
+# return finished tibble
+return(chess)
+
+}
+
+
+
+

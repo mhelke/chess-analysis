@@ -251,12 +251,12 @@ chessdata <- function(username, year, month, nmonths = 1, class = NA, rules = NA
   # All columns that contain repeated data from  the pgn file can be deleted. This
   # includes most of the white and black data.
 
-  chess <- chess %>%
+
+ chess <- chess %>%
     mutate(white_rating = chess$white.rating) %>%
     mutate(black_rating = chess$black.rating) %>%
     select(-`white.@id`, -`black.@id`, -white.result, -black.result, -white.username,
            -black.username, -white.rating, -black.rating)
-
 
 
   # Remove any rows that are NA due to the dummy table

@@ -8,19 +8,16 @@
 chessdata <- function(username, year, month, nmonths = 1, class = NA, rules = NA,
                        moves = TRUE, position = TRUE) {
 
-  library(tidyverse)
-  library(ggplot2)
+  library(dplyr)
   library(jsonlite)
   library(bigchess)
 
   ## Test Values ##
 
-  username = "mastermatthew52"
-  year = 2020
+  username = "MasterMatthew52"
+  year = 2023
   month = 1
-  nmonths = 3
-
-
+  nmonths = 4
 
   # make a  copy of nmonths for use in loops
   n = nmonths
@@ -28,21 +25,17 @@ chessdata <- function(username, year, month, nmonths = 1, class = NA, rules = NA
 
   # Verify User Exists
   profile_url <- paste0("https://api.chess.com/pub/player/",
-                        username,sep = "", collapse = NULL)
+                        username, sep = "", collapse = NULL)
 
-  invalid_user <- try(fromJSON(toString(profile_url), flatten = TRUE), silent = TRUE)
+  profile <- try(fromJSON(profile_url, flatten = TRUE), silent = TRUE)
 
-  if(class(invalid_user) == "try-error"){
+  if(class(profile) == "try-error"){
     stop("Invalid username - user does not exist")
   }
 
-  # Verify the information entered is valid
+  # Verify the dates entered are valid
 
-
-  profile <- fromJSON(toString(profile_url), flatten = TRUE)
-
-  date_joined <- profile$joined %>%
-    as.POSIXct(origin="1970-01-01", tz="GMT")
+  date_joined <- as.POSIXct(profile$joined, origin="1970-01-01", tz="GMT") %>% as.Date()
 
   # The day will be 1 by default since it is the start of the month and  that's  all
   # the data we have.
@@ -53,12 +46,14 @@ chessdata <- function(username, year, month, nmonths = 1, class = NA, rules = NA
 
   date_given <- as.Date(date_given)
 
+  # Verify the user joined the site before the given date
   if(date_given < date_joined){
     stop("No games for that user before the given month.")
   }
 
+  # When the given user has a high number of games played, the following requests and processing will be expensive
   if(nmonths >= 12){
-    warning("Date rage of 12 or higher could take awhile to lead")
+    warning("Date rage of 12 or higher could take awhile to load")
   }
 
   chess_PGN_data <- vector(mode = "list", n)
@@ -66,13 +61,16 @@ chessdata <- function(username, year, month, nmonths = 1, class = NA, rules = NA
   JSON_pgn_url <- vector(mode = "list", n)
   JSON_url <- vector(mode = "list", n)
 
-
+  # Fetches the data from the chess.com public API
   if (!is.null(nmonths) & nmonths != 1){
 
     i = 1;
     while (nmonths!=0) {
 
+      # Increment the year and provide the correct month
       if(month == 13) {month = 1; year = year + 1}
+
+      # A 0 is added to the month to create a double digit number, required by the API
       if(month < 10){
         JSON_url[i] <- paste0("https://api.chess.com/pub/player/", username, "/games/", year, "/0", month,
                               sep = "", collapse = NULL)
@@ -217,8 +215,6 @@ chessdata <- function(username, year, month, nmonths = 1, class = NA, rules = NA
   # Join the PGN and Chess tables by the unique URL
   chess <- chess %>%
     inner_join(chess_PGN_data_full, by = "url")
-
-
 
   chess <- as_tibble(chess)
 
